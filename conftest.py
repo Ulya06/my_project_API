@@ -8,34 +8,37 @@ from methods.get_meme import GetMeme
 
 
 @pytest.fixture()
-def create_new_meme_up():
+def create_meme():
     return CreateMeme()
 
 
 @pytest.fixture()
-def test_meme(create_new_meme_up):
-    body = {
-        "text": "Test meme",
-        "url": "https://www.care.com/c/wp-content/uploads/sites/2/2021/04/maressab-202115020615567399.jpg",
-        "tags": ["test", "meme"],
-        "info": {"color": ["red", "blue"]}
-    }
-    create_new_meme_up.create_new_meme(body)
-    meme_id = create_new_meme_up.json["id"]
-    yield create_new_meme_up.json
-    DeleteMeme().delete_meme(meme_id)
-
-
-@pytest.fixture()
-def updated_meme_up():
+def update_meme():
     return PutMeme()
 
 
 @pytest.fixture()
-def delete_meme_up():
+def delete_meme():
     return DeleteMeme()
 
 
 @pytest.fixture()
-def get_meme_up():
+def get_meme():
     return GetMeme()
+
+
+@pytest.fixture()
+def created_meme(create_meme, delete_meme):
+    body = {
+        "text": "Test meme",
+        "url": "https://www.care.com/c/wp-content/uploads/sites/2/2021/04/maressab-202115020615567399.jpg",
+        "tags": ["test", "meme"],
+        "info": {"color": ["red", "blue"]},
+    }
+
+    create_meme.create_new_meme(body)
+    meme_id = create_meme.json["id"]
+
+    yield create_meme.json
+
+    delete_meme.delete_meme(meme_id)
