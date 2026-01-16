@@ -28,13 +28,7 @@ def test_create_meme_saves_correct_data(create_meme, get_meme, delete_meme):
 
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_200()
-
-
-    assert get_meme.json["text"] == body["text"]
-    assert get_meme.json["url"] == body["url"]
-    assert get_meme.json["tags"] == body["tags"]
-    assert get_meme.json["info"] == body["info"]
-
+    get_meme.check_meme_data(body)
 
     delete_meme.delete_meme(meme_id)
     delete_meme.check_status_code_200()
@@ -58,12 +52,7 @@ def test_update_meme_updates_all_fields(created_meme, update_meme, get_meme):
 
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_200()
-
-
-    assert get_meme.json["text"] == updated_body["text"]
-    assert get_meme.json["url"] == updated_body["url"]
-    assert get_meme.json["tags"] == updated_body["tags"]
-    assert get_meme.json["info"] == updated_body["info"]
+    get_meme.check_meme_data(updated_body)
 
 
 @allure.feature("Meme API")
@@ -76,3 +65,35 @@ def test_delete_meme_removes_meme(created_meme, delete_meme, get_meme):
 
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_404()
+
+
+@allure.feature("Meme API")
+@allure.story("Create meme with empty text")
+def test_create_meme_with_empty_text(create_meme, get_meme, delete_meme):
+    body = {
+        "text": "",
+        "url": "https://example.com/image.png",
+        "tags": ["test"],
+        "info": {"color": ["black"]},
+    }
+
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    meme_id = create_meme.json["id"]
+
+    get_meme.get_meme(meme_id)
+    get_meme.check_status_code_200()
+    get_meme.check_meme_data(body)
+
+    delete_meme.delete_meme(meme_id)
+    delete_meme.check_status_code_200()
+
+
+@allure.feature("Meme API")
+@allure.story("Get meme by id")
+def test_get_meme_by_id(created_meme, get_meme):
+    meme_id = created_meme["id"]
+
+    get_meme.get_meme(meme_id)
+    get_meme.check_status_code_200()
+    get_meme.check_meme_data(created_meme)
