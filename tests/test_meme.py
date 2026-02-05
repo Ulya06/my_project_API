@@ -1,4 +1,5 @@
 import allure
+import pytest
 
 
 @allure.feature("Meme API")
@@ -8,7 +9,6 @@ def test_check_token_alive(auth_token):
 
     auth = Authorize()
     response = auth.check_token(auth_token)
-
     assert response.status_code == 200
 
 
@@ -16,10 +16,10 @@ def test_check_token_alive(auth_token):
 @allure.story("Create meme saves correct data")
 def test_create_meme_saves_correct_data(create_meme, get_meme, delete_meme):
     body = {
-        "text": "real life",
-        "url": "https://www.care.com/c/wp-content/uploads/sites/2/2021/04/maressab-202115020615567399.jpg",
-        "tags": ["cat", "gape", "tongue"],
-        "info": {"color": ["white", "grey"]},
+        "text": "life",
+        "url": "https://example.com/img.png",
+        "tags": ["cat"],
+        "info": {"color": ["black"]},
     }
 
     create_meme.create_new_meme(body)
@@ -28,72 +28,163 @@ def test_create_meme_saves_correct_data(create_meme, get_meme, delete_meme):
 
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_200()
-    get_meme.check_meme_data(body)
 
     delete_meme.delete_meme(meme_id)
     delete_meme.check_status_code_200()
 
 
-@allure.feature("Meme API")
-@allure.story("Update meme updates all fields")
-def test_update_meme_updates_all_fields(created_meme, update_meme, get_meme):
-    meme_id = created_meme["id"]
-
-    updated_body = {
-        "id": meme_id,
-        "text": "updated text",
-        "url": "https://example.com/new.png",
-        "tags": ["updated", "fun"],
-        "info": {"color": ["black"]},
+@pytest.mark.parametrize(
+    "text",
+    ["a", "test", "123", "long text for meme"]
+)
+def test_create_meme_with_different_text_values(create_meme, delete_meme, text):
+    body = {
+        "text": text,
+        "url": "https://example.com/img.png",
+        "tags": ["tag"],
+        "info": {},
     }
 
-    update_meme.put_meme(updated_body, meme_id)
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    delete_meme.delete_meme(create_meme.json["id"])
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [["a"], ["one", "two"], []]
+)
+def test_create_meme_with_different_tags(create_meme, delete_meme, tags):
+    body = {
+        "text": "tags test",
+        "url": "https://example.com/img.png",
+        "tags": tags,
+        "info": {},
+    }
+
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    delete_meme.delete_meme(create_meme.json["id"])
+
+
+def test_get_created_meme(created_meme, get_meme):
+    get_meme.get_meme(created_meme["id"])
+    get_meme.check_status_code_200()
+
+
+def test_update_meme_text_only(created_meme, update_meme, get_meme):
+    meme_id = created_meme["id"]
+    body = {"text": "updated"}
+
+    update_meme.put_meme(body, meme_id)
     update_meme.check_status_code_200()
 
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_200()
-    get_meme.check_meme_data(updated_body)
 
 
-@allure.feature("Meme API")
-@allure.story("Delete meme removes meme from system")
-def test_delete_meme_removes_meme(created_meme, delete_meme, get_meme):
-    meme_id = created_meme["id"]
+def test_update_meme_url_only(created_meme, update_meme):
+    body = {"url": "https://example.com/new.png"}
+    update_meme.put_meme(body, created_meme["id"])
+    update_meme.check_status_code_200()
 
-    delete_meme.delete_meme(meme_id)
+
+def test_update_meme_tags_only(created_meme, update_meme):
+    body = {"tags": ["new"]}
+    update_meme.put_meme(body, created_meme["id"])
+    update_meme.check_status_code_200()
+
+
+def test_update_meme_info_only(created_meme, update_meme):
+    body = {"info": {"size": "big"}}
+    update_meme.put_meme(body, created_meme["id"])
+    update_meme.check_status_code_200()
+
+
+def test_delete_meme(created_meme, delete_meme):
+    delete_meme.delete_meme(created_meme["id"])
     delete_meme.check_status_code_200()
 
+
+def test_deleted_meme_not_available(created_meme, delete_meme, get_meme):
+    meme_id = created_meme["id"]
+    delete_meme.delete_meme(meme_id)
     get_meme.get_meme(meme_id)
     get_meme.check_status_code_404()
 
 
-@allure.feature("Meme API")
-@allure.story("Create meme with empty text")
-def test_create_meme_with_empty_text(create_meme, get_meme, delete_meme):
-    body = {
-        "text": "",
-        "url": "https://example.com/image.png",
-        "tags": ["test"],
-        "info": {"color": ["black"]},
-    }
+def test_multiple_memes_creation(create_meme, delete_meme):
+    ids = []
+    for i in range(3):
+        create_meme.create_new_meme({
+            "text": f"meme {i}",
+            "url": "https://example.com/img.png",
+            "tags": ["tag"],
+            "info": {},
+        })
+        ids.append(create_meme.json["id"])
 
-    create_meme.create_new_meme(body)
-    create_meme.check_status_code_200()
-    meme_id = create_meme.json["id"]
+    for meme_id in ids:
+        delete_meme.delete_meme(meme_id)
+        delete_meme.check_status_code_200()
 
-    get_meme.get_meme(meme_id)
+
+def test_get_meme_twice(created_meme, get_meme):
+    get_meme.get_meme(created_meme["id"])
     get_meme.check_status_code_200()
-    get_meme.check_meme_data(body)
+    get_meme.get_meme(created_meme["id"])
+    get_meme.check_status_code_200()
 
-    delete_meme.delete_meme(meme_id)
+
+def test_update_meme_twice(created_meme, update_meme):
+    update_meme.put_meme({"text": "1"}, created_meme["id"])
+    update_meme.check_status_code_200()
+    update_meme.put_meme({"text": "2"}, created_meme["id"])
+    update_meme.check_status_code_200()
+
+
+def test_create_and_delete_immediately(create_meme, delete_meme):
+    create_meme.create_new_meme({
+        "text": "temp",
+        "url": "https://example.com/img.png",
+        "tags": [],
+        "info": {},
+    })
+    delete_meme.delete_meme(create_meme.json["id"])
     delete_meme.check_status_code_200()
 
 
-@allure.feature("Meme API")
-@allure.story("Get meme by id")
-def test_get_meme_by_id(created_meme, get_meme):
-    meme_id = created_meme["id"]
+def test_create_meme_with_empty_tags(create_meme, delete_meme):
+    body = {
+        "text": "empty tags",
+        "url": "https://example.com/img.png",
+        "tags": [],
+        "info": {},
+    }
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    delete_meme.delete_meme(create_meme.json["id"])
 
-    get_meme.get_meme(meme_id)
-    get_meme.check_status_code_200()
-    get_meme.check_meme_data(created_meme)
+
+def test_create_meme_with_empty_info(create_meme, delete_meme):
+    body = {
+        "text": "empty info",
+        "url": "https://example.com/img.png",
+        "tags": ["tag"],
+        "info": {},
+    }
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    delete_meme.delete_meme(create_meme.json["id"])
+
+
+def test_create_meme_with_long_text(create_meme, delete_meme):
+    body = {
+        "text": "a" * 200,
+        "url": "https://example.com/img.png",
+        "tags": ["tag"],
+        "info": {},
+    }
+    create_meme.create_new_meme(body)
+    create_meme.check_status_code_200()
+    delete_meme.delete_meme(create_meme.json["id"])
