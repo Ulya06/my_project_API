@@ -2,19 +2,36 @@ import requests
 import allure
 
 
-class Authorize:
-    url = 'http://memesapi.course.qa-practice.com/authorize'
+from methods.meme_endpoint import MemeEndpoint
+
+
+class Authorize(MemeEndpoint):
+
+    url = "http://memesapi.course.qa-practice.com/authorize"
+
     token = None
 
-    @allure.step("Authorize user and get token")
+
+    @allure.step("Get token")
     def get_token(self, name):
-        response = requests.post(self.url, json={"name": name})
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        self.token = response.json()["token"]
+
+        self.response = requests.post(
+            self.url,
+            json={"name": name}
+        )
+
+        self.check_status_code(200)
+
+        self.token = self.json["token"]
+
         return self.token
 
-    @allure.step("Check if token is alive")
+
+    @allure.step("Check token")
     def check_token(self, token):
-        response = requests.get(f"{self.url}/{token}")
-        self.response = response
-        return response
+
+        self.response = requests.get(
+            f"{self.url}/{token}"
+        )
+
+        return self.response
