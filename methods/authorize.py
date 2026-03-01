@@ -6,30 +6,20 @@ from methods.meme_endpoint import MemeEndpoint
 
 
 class Authorize(MemeEndpoint):
-
     url = "http://memesapi.course.qa-practice.com/authorize"
-
-    token = None
-
 
     @allure.step("Get token")
     def get_token(self, name):
-
         self.response = requests.post(
             self.url,
             json={"name": name}
         )
 
-        self.check_status_code(200)
-
-        self.token = self.json["token"]
-
-        return self.token
+        return self.response
 
 
-    @allure.step("Check token")
+    @allure.step("Check token validity")
     def check_token(self, token):
-
         self.response = requests.get(
             f"{self.url}/{token}"
         )

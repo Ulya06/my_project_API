@@ -2,13 +2,9 @@ import allure
 
 
 class MemeEndpoint:
-
-
     url = "http://memesapi.course.qa-practice.com/meme"
-
     headers = None
     response = None
-
 
     @property
     def json(self):
@@ -18,7 +14,7 @@ class MemeEndpoint:
             return None
 
 
-    @allure.step("Set token")
+    @allure.step("Set authorization token")
     def set_token(self, token):
         self.headers = {
             "Authorization": token,
@@ -33,14 +29,14 @@ class MemeEndpoint:
         )
 
 
-    @allure.step("Check meme equals expected")
+    @allure.step("Check meme data equals expected")
     def check_meme_equals(self, expected_data):
         for key in expected_data:
             assert self.json[key] == expected_data[key], (
-                f"Expected {key}={expected_data[key]}, got {self.json[key]}"
+                f"{key} mismatch. Expected {expected_data[key]}, got {self.json[key]}"
             )
 
 
     @allure.step("Check id exists")
     def check_id_exists(self):
-        assert "id" in self.json, "Response has no id"
+        assert "id" in self.json, "Response does not contain id"

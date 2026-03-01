@@ -7,11 +7,12 @@ from methods.meme_endpoint import MemeEndpoint
 
 class CreateMeme(MemeEndpoint):
 
-    @allure.step("Create new meme")
+    @allure.step("Create meme")
     def create_new_meme(self, body):
         self.response = requests.post(
             self.url,
             json=body,
             headers=self.headers
         )
-        self.check_status_code(200)
+
+        return self.response
